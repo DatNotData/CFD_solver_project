@@ -1,0 +1,18 @@
+
+
+V5
+# uses GPU, uses sparses matrices to save on memory, implicit for both time and space
+# appears to be stable for CFL of about 0.05
+# WITH INFINITE boundary conditions
+
+V6
+# Implicit Time stepping
+# appears to be stable for CFL of about 0.05
+# WITH INFINITE boundary conditions
+# first order instead of second order in space
+
+V7
+# RK4 Time stepping
+# appears to be stable for CFL of about 0.05
+# WITH INFINITE boundary conditions
+# first order instead of second order in space, trying to improve convergence
