@@ -3,7 +3,7 @@
 # Euler Equations Solver
 # by Dat Ha
 #
-# Euler Time stepping
+# RK4 or Euler Time stepping
 # Central difference method for space discretization except at boundaries
 #
 ###############################################################################
@@ -244,21 +244,30 @@ def get_k(t, rho_, rho_u_, rho_v_, rho_E_):
     
 
     # calculate the "f(t,x)" value at the intersteps, aka the k values for all the variables
-    k_rho = (fx(t, rho_u_) + fy(t, rho_v_))
-    k_rho_u = (fx(t, np.multiply(rho_u_, u_) + p_) + fy(t, np.multiply(rho_u_, v_)))
-    k_rho_v = (fx(t, np.multiply(rho_v_, u_)) + fy(t, np.multiply(rho_v_, v_) + p_))
-    k_rho_E = (fx(t, np.multiply(u_, rho_E_+p_)) + fy(t, np.multiply(v_, rho_E_+p_)))
-
+    k_rho = fx(t, rho_u_) + fy(t, rho_v_)
+    k_rho_u = fx(t, np.multiply(rho_u_, u_) + p_) + fy(t, np.multiply(rho_u_, v_))
+    k_rho_v = fx(t, np.multiply(rho_v_, u_)) + fy(t, np.multiply(rho_v_, v_) + p_)
+    k_rho_E = fx(t, np.multiply(u_, rho_E_+p_)) + fy(t, np.multiply(v_, rho_E_+p_))
+    
     return k_rho, k_rho_u, k_rho_v, k_rho_E
 
 for ti in range(0,nt-1,1):
-    #results[ti] = results[ti-1] + dt * f(mesht[ti], results[ti-1]) # euler
+    next_ti = ti + 1
 
+    # kinda half-assed but used to monitor that it doesn't yeet to infinity
     CFL = np.max(u[ti]/dx + v[ti]/dy) * dt
     print('ti = ', ti, '; Max CFL = ', CFL)
 
     t = mesht[ti]
-    
+        
+
+    # euler method, old, hard to make stable
+    #rho[next_ti]   = rho[ti]   - dt * (fx(t, rho_u[ti]) + fy(t, rho_v[ti]))
+    #rho_u[next_ti] = rho_u[ti] - dt * (fx(t, np.multiply(rho_u[ti], u[ti]) + p[ti]) + fy(t, np.multiply(rho_u[ti], v[ti])))
+    #rho_v[next_ti] = rho_v[ti] - dt * (fx(t, np.multiply(rho_v[ti], u[ti])) + fy(t, np.multiply(rho_v[ti], v[ti]) + p[ti]))
+    #rho_E[next_ti] = rho_E[ti] - dt * (fx(t, np.multiply(u[ti], rho_E[ti]+p[ti])) + fy(t, np.multiply(v[ti], rho_E[ti]+p[ti])))
+
+
     # RK4 method
     # - instead of + in the k2 to k4 values because the way the equations are written
     k1_rho, k1_rho_u, k1_rho_v, k1_rho_E = get_k(t,
@@ -283,20 +292,11 @@ for ti in range(0,nt-1,1):
                                                 rho_u[ti] - dt*k3_rho_u,
                                                 rho_v[ti] - dt*k3_rho_v,
                                                 rho_E[ti] - dt*k3_rho_E)
-    
-
-    next_ti = ti + 1
 
     rho[next_ti] = rho[ti] - (dt/6) * (k1_rho + 2*k2_rho + 2*k3_rho + k4_rho)
     rho_u[next_ti] = rho_u[ti] - (dt/6) * (k1_rho_u + 2*k2_rho_u + 2*k3_rho_u + k4_rho_u)
     rho_v[next_ti] = rho_v[ti] - (dt/6) * (k1_rho_v + 2*k2_rho_v + 2*k3_rho_v + k4_rho_v)
     rho_E[next_ti] = rho_E[ti] - (dt/6) * (k1_rho_E + 2*k2_rho_E + 2*k3_rho_E + k4_rho_E)
-
-    # euler method, old, hard to make stable
-    #rho[next_ti]   = rho[ti]   - dt * (fx(t, rho_u[ti]) + fy(t, rho_v[ti]))
-    #rho_u[next_ti] = rho_u[ti] - dt * (fx(t, np.multiply(rho_u[ti], u[ti]) + p[ti]) + fy(t, np.multiply(rho_u[ti], v[ti])))
-    #rho_v[next_ti] = rho_v[ti] - dt * (fx(t, np.multiply(rho_v[ti], u[ti])) + fy(t, np.multiply(rho_v[ti], v[ti]) + p[ti]))
-    #rho_E[next_ti] = rho_E[ti] - dt * (fx(t, np.multiply(u[ti], rho_E[ti]+p[ti])) + fy(t, np.multiply(v[ti], rho_E[ti]+p[ti])))
 
     # this section is used for both euler and RK4 methods
     u[next_ti] = np.divide(rho_u[next_ti], rho[next_ti])
@@ -305,10 +305,10 @@ for ti in range(0,nt-1,1):
     p[next_ti] = (gamma - 1) * np.multiply(rho[next_ti], E[next_ti] - 0.5 * (np.power(u[next_ti], 2) + np.power(v[next_ti], 2)))
 
 
-
     if np.max(u[next_ti]) > 3e8 or np.max(v[next_ti]) > 3e8:
         ti_last_before_crash = ti
         break
+
 
 end_time = time.time()
 
