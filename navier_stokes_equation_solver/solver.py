@@ -4,15 +4,10 @@
 # by Dat Ha
 #
 # RK4 Time stepping
-# Central difference method for space discretization 
+# Central difference method for spatial derivative discretization 
 
 ###############################################################################
 
-
-
-
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 import os
 import time
 import numpy as np
@@ -35,19 +30,6 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 #c_v = 718
 #R = 287
 
-#water
-gamma = 1.33
-mu = 10e-3
-k = 0.598 
-c_v = 4180
-R = 4615 
-
-Re = 10 # reynolds number
-p_0 = 101300 # initial pressure?
-T_b = 298 # wall temperature ~25C
-rho_0 = p_0 / R / T_b 
-u_w = 1 # lid velocity
-E_b = c_v * T_b # energy/density at boundaries (except the lid)
 
 # mesh domain 
 xmin = 0
@@ -57,13 +39,12 @@ ymin = 0
 ymax = 1
 
 tmin = 0
-tmax = 0.025
+tmax = 1
 
 # grid step size
-dx = 0.05
+dx = 0.02
 dy = dx
-dt = 0.000025
-
+dt = 0.00001
 
 
 
@@ -103,6 +84,22 @@ mesht = np.linspace(tmin, tmax, nt)
 ####################################################################################
 ################################ CREATING VARIABLES ################################
 ####################################################################################
+
+#water
+gamma = 1.33
+mu = 10e-3
+k = 0.598 
+c_v = 4180
+R = 4615 
+
+#Re = 1000 # reynolds number
+p_0 = 101300 # initial pressure?
+T_b = 298 # wall temperature ~25C
+rho_0 = p_0 / R / T_b 
+#u_w = Re * mu / rho_0 / DX # lid velocity
+u_w = 1
+E_b = c_v * T_b # energy/density at boundaries (except the lid)
+
 
 # used for the time stepping differential equations
 rho   = np.zeros((nt,n))
@@ -190,7 +187,7 @@ def fy(f):
 ################################ TIME MARCHING ################################
 ###############################################################################
 
-print('Starting to march in time')
+print('Starting to march in time...')
 start_time = time.time()
 
 ti_last_before_crash = nt # in case it crashes, record the last time step

@@ -13,6 +13,7 @@ import matplotlib.animation as animation
 import os
 import numpy as np
 import json
+import math
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -87,9 +88,36 @@ mesht = np.linspace(tmin, tmax, nt)
 rho   = np.load(script_dir+'/data_output/data_output_file_rho.npy')
 u = np.load(script_dir+'/data_output/data_output_file_u.npy')
 v = np.load(script_dir+'/data_output/data_output_file_v.npy')
-p = np.load(script_dir+'/data_output/data_output_file_p.npy')
-E = np.load(script_dir+'/data_output/data_output_file_E.npy')
-T = np.load(script_dir+'/data_output/data_output_file_T.npy')
+#p = np.load(script_dir+'/data_output/data_output_file_p.npy')
+#E = np.load(script_dir+'/data_output/data_output_file_E.npy')
+#T = np.load(script_dir+'/data_output/data_output_file_T.npy')
+#V = np.sqrt(np.power(u, 2) + np.power(v, 2))
+
+# make equal to zero when they don't need to be loaded
+p = 0
+E = 0
+T = 0
+V = 0
+
+
+
+
+####################################################################################
+################################# GENERAL SETTINGS #################################
+####################################################################################
+
+
+frame_rate = 100 # fps, frames per second of the video generated
+frame_ratio = 50 # only save video of 1 frame per XX to save time
+
+# to "resize" the output in case there is data that is less interesting
+# e.g. its already stable, after the code crashed, etc.
+#print(DT, nt)
+#DT=DT/10
+#nt=int(nt/10)+1
+#print(DT, nt)
+
+vector_scale = 10
 
 
 
@@ -175,14 +203,25 @@ while True:
             print('Error in the frame given.')
 
     elif user_input == '/v':
-        fig1, ax1 = plt.subplots()
-            
+        decimal_points_dt = 0
+        for i in range(16):
+            if (dt * (10)**i)%1 == 0:
+                decimal_points_dt = i
+                break
+
+        time_formatter = ('%.' + str(decimal_points_dt) + 'f')
+        
+        fig1, ax1 = plt.subplots(figsize=(19.2,10.8))
+        
         magnitude = np.sqrt(np.power(u, 2) + np.power(v, 2))
 
         im1 = None
 
         ax1.set_xlabel('x')
         ax1.set_ylabel('y')
+        ax1.set_aspect('equal', adjustable='box')        
+
+        cb = fig1.colorbar(im1, cmap=plt.cm.jet)
 
         # Function to update plot with new frame
         def update(frame):
@@ -202,11 +241,24 @@ while True:
                 np.transpose(u[frame].reshape((len(meshx),len(meshy)))),
                 np.transpose(v[frame].reshape((len(meshx),len(meshy)))),
                 np.transpose(magnitude.reshape((len(meshx),len(meshy)))),
+                scale=vector_scale,
+                scale_units = 'width',
                 cmap='jet'
             )
+
+            cb.update_normal(im1)
+
+            #im1 = ax1.imshow(
+            #    np.transpose(V[frame].reshape((len(meshx),len(meshy)))),
+            #    cmap='jet',
+            #    aspect='auto',
+            #    extent=[meshx[0], meshx[-1], meshy[0], meshy[-1]],
+            #    origin='lower'
+            #)
             
             # Set title
-            ax1.set_title("Time = {}".format(frame/nt*DT*frame_ratio+tmin))
+            t = frame/nt*DT*frame_ratio+tmin
+            ax1.set_title("Time = {}".format(time_formatter % t))
 
             # Return updated image plot
             return im1,
@@ -214,13 +266,12 @@ while True:
         # Create animation
 
 
-        frame_ratio = 100 # only save video of 1 frame per XX to save time
         u = u[::frame_ratio]
         v = v[::frame_ratio]
         ani = animation.FuncAnimation(fig1, update, frames=int(nt/frame_ratio), blit=True)
 
         #FFwriter = animation.FFMpegWriter(fps=int(1/dt))
-        FFwriter = animation.FFMpegWriter(fps=50)
+        FFwriter = animation.FFMpegWriter(fps=frame_rate)
         ani.save(script_dir + "\\animation.mp4", writer=FFwriter)
 
         print('Done producing animation video')
