@@ -14,9 +14,16 @@ import os
 import numpy as np
 import json
 import math
+import time
+import sys
 
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
+
+script_dir = ''
+try:
+    script_dir = sys.argv[1]
+except:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 
@@ -26,7 +33,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 ###############################################################################
 
 
-user_set_variables_file = open(script_dir + '/data_output/user_set_variables.json', 'r')
+user_set_variables_file = open(script_dir + '/user_set_variables.json', 'r')
 user_set_variables = user_set_variables_file.read()
 user_set_variables_file.close()
 user_set_variables = json.loads(user_set_variables)
@@ -85,19 +92,17 @@ mesht = np.linspace(tmin, tmax, nt)
 ################################## LOADING RESULTS #################################
 ####################################################################################
 
-rho   = np.load(script_dir+'/data_output/data_output_file_rho.npy')
-u = np.load(script_dir+'/data_output/data_output_file_u.npy')
-v = np.load(script_dir+'/data_output/data_output_file_v.npy')
-#p = np.load(script_dir+'/data_output/data_output_file_p.npy')
-#E = np.load(script_dir+'/data_output/data_output_file_E.npy')
-#T = np.load(script_dir+'/data_output/data_output_file_T.npy')
-#V = np.sqrt(np.power(u, 2) + np.power(v, 2))
+rho   = np.load(script_dir+'/data_output_file_rho.npy')
+u = np.load(script_dir+'/data_output_file_u.npy')
+v = np.load(script_dir+'/data_output_file_v.npy')
+#p = np.load(script_dir+'/data_output_file_p.npy')
+#E = np.load(script_dir+'/data_output_file_E.npy')
+#T = np.load(script_dir+'/data_output_file_T.npy')
 
 # make equal to zero when they don't need to be loaded
 p = 0
 E = 0
 T = 0
-V = 0
 
 
 
@@ -107,17 +112,19 @@ V = 0
 ####################################################################################
 
 
-frame_rate = 100 # fps, frames per second of the video generated
+frame_rate = 50 # fps, frames per second of the video generated
 frame_ratio = 50 # only save video of 1 frame per XX to save time
 
 # to "resize" the output in case there is data that is less interesting
 # e.g. its already stable, after the code crashed, etc.
-#print(DT, nt)
-#DT=DT/10
-#nt=int(nt/10)+1
-#print(DT, nt)
+fraction_kept = 0.25
 
-vector_scale = 10
+print('Before Dt and nt:', DT, nt)
+DT=DT*fraction_kept
+nt=int(nt*fraction_kept)+1
+print('After  Dt and nt:', DT, nt)
+
+vector_scale = 250
 
 
 
@@ -125,6 +132,8 @@ vector_scale = 10
 #################################################################################
 ################################### FUNCTIONS ###################################
 #################################################################################
+
+plt.style.use('dark_background')
 
 def print_results(results, nx, nt):
     results = np.transpose(results)
@@ -140,15 +149,16 @@ def plot_contours(results, meshx, meshy, title='title'):
     im1 = ax1.imshow(
         np.transpose(results.reshape((len(meshx),len(meshy)))),
         cmap='jet',
-        aspect='auto',
+        aspect=1,
         extent=[meshx[0], meshx[-1], meshy[0], meshy[-1]],
         origin='lower'
     )
+    
 
     ax1.set_xlabel('x')
     ax1.set_ylabel('y')
     ax1.set_title(title)
-    plt.colorbar(im1, ax=ax1)
+    fig1.colorbar(im1, label=title, orientation='vertical')
 
 def plot_vectors(meshx, meshy, vectorx, vectory, title='title'):
     fig1, ax1 = plt.subplots()
@@ -191,18 +201,25 @@ while True:
             k = int(user_input[2:])
             if k<0:
                 break
-            plot_contours(p[k], meshx, meshy, 'Pressure [p]')
-            plot_contours(rho[k], meshx, meshy, 'Density [rho]')
-            plot_contours(u[k], meshx, meshy, 'u')
-            plot_contours(v[k], meshx, meshy, 'v')
-            plot_contours(T[k], meshx, meshy, 'Temperature [T]')
-            plot_contours(E[k], meshx, meshy, 'Energy [E]')
+            magnitude = np.sqrt(np.power(u[k], 2) + np.power(v[k], 2))
+            plot_contours(magnitude, meshx, meshy, 'Velocity Magnitude [m/s]')
+            #plot_contours(p[k], meshx, meshy, 'Pressure [p]')
+            #plot_contours(rho[k], meshx, meshy, 'Density [rho]')
+            #plot_contours(u[k], meshx, meshy, 'u')
+            #plot_contours(v[k], meshx, meshy, 'v')
+            #plot_contours(T[k], meshx, meshy, 'Temperature [T]')
+            #plot_contours(E[k], meshx, meshy, 'Energy [E]')
+
+
             plt.show()
 
         except:
             print('Error in the frame given.')
 
     elif user_input == '/v':
+        print('Starting video production...')
+        start_time = time.time()
+
         decimal_points_dt = 0
         for i in range(16):
             if (dt * (10)**i)%1 == 0:
@@ -216,17 +233,19 @@ while True:
         magnitude = np.sqrt(np.power(u, 2) + np.power(v, 2))
 
         im1 = None
+        cb = None
 
         ax1.set_xlabel('x')
         ax1.set_ylabel('y')
-        ax1.set_aspect('equal', adjustable='box')        
+        ax1.set_aspect('equal')        
 
-        cb = fig1.colorbar(im1, cmap=plt.cm.jet)
+        
 
         # Function to update plot with new frame
         def update(frame):
             global im1  # use the global variable
-
+            global cb
+            
             # Clear previous image plot
             if im1 is not None:
                 im1.remove()
@@ -235,27 +254,34 @@ while True:
             
             magnitude = np.sqrt(np.power(u[frame], 2) + np.power(v[frame], 2))
 
-            im1 = ax1.quiver(
-                meshx,
-                meshy,
-                np.transpose(u[frame].reshape((len(meshx),len(meshy)))),
-                np.transpose(v[frame].reshape((len(meshx),len(meshy)))),
+
+
+            im1 = ax1.imshow(
                 np.transpose(magnitude.reshape((len(meshx),len(meshy)))),
-                scale=vector_scale,
-                scale_units = 'width',
-                cmap='jet'
+                cmap='hot',
+                aspect='1',
+                extent=[meshx[0], meshx[-1], meshy[0], meshy[-1]],
+                origin='lower'
             )
-
-            cb.update_normal(im1)
-
-            #im1 = ax1.imshow(
-            #    np.transpose(V[frame].reshape((len(meshx),len(meshy)))),
-            #    cmap='jet',
-            #    aspect='auto',
-            #    extent=[meshx[0], meshx[-1], meshy[0], meshy[-1]],
-            #    origin='lower'
-            #)
             
+
+            
+            #im1 = ax1.quiver(
+            #    meshx,
+            #    meshy,
+            #    np.transpose(u[frame].reshape((len(meshx),len(meshy)))),
+            #    np.transpose(v[frame].reshape((len(meshx),len(meshy)))),
+            #    np.transpose(magnitude.reshape((len(meshx),len(meshy)))),
+            #    scale=vector_scale,
+            #    scale_units = 'width',
+            #    cmap='jet'
+            #)
+
+            if cb == None:
+                cb = fig1.colorbar(im1, label='Velocity magnitude (m/s)', orientation='vertical')
+            
+
+
             # Set title
             t = frame/nt*DT*frame_ratio+tmin
             ax1.set_title("Time = {}".format(time_formatter % t))
@@ -274,4 +300,8 @@ while True:
         FFwriter = animation.FFMpegWriter(fps=frame_rate)
         ani.save(script_dir + "\\animation.mp4", writer=FFwriter)
 
+        end_time = time.time()
+
+        execution_time = end_time - start_time
+        print('Execution time :', execution_time, 's')
         print('Done producing animation video')

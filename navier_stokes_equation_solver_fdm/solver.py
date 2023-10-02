@@ -92,12 +92,11 @@ k = 0.598
 c_v = 4180
 R = 4615 
 
-#Re = 1000 # reynolds number
+Re = 100 # reynolds number
 p_0 = 101300 # initial pressure?
 T_b = 298 # wall temperature ~25C
 rho_0 = p_0 / R / T_b 
-#u_w = Re * mu / rho_0 / DX # lid velocity
-u_w = 1
+u_w = Re * mu / rho_0 / DX # lid velocity
 E_b = c_v * T_b # energy/density at boundaries (except the lid)
 
 
