@@ -1,8 +1,7 @@
 # CFD_solver_project
 
 Codes I'm writing to learn to apply numerical methods to fluid dynamics problems.  
-By: Dat Ha  
-Started in 2023  
+By: Dat Ha
 
 laplace_fdm_implicit              - codes I wrote to learn to solve the Laplace equations implicitly using the Jacobi and Gauss-Seidl methods.  
 linear_advection_fdm_implicit     - codes I wrote to solve for the advection of a "higher density" blob of fluid.  
