@@ -10,7 +10,8 @@ euler_equations_solver_fdm        - codes I wrote to solve for the advection of 
 navier_stokes_equation_solver_fdm - codes I'm currently working on to solve for a lid driven cavity problem using the N-S equations.  
 
 Results from the NS equation solver at Re = 100.  
-![water_Re_100_dx_0 02_dt_0 00001_tmax_1_jet_dark](https://github.com/DatNotData/CFD_solver_project/assets/24595553/cbc10950-02a1-447f-80d1-b4a3a695ab01)
+![water_Re_100_dx_0 02_dt_0 00001_tmax_1_viridis_blur_spline16](https://github.com/DatNotData/CFD_solver_project/assets/24595553/70cae030-db7c-4260-a1ed-f3af814e6856)
+
 
 
 
